@@ -1,7 +1,6 @@
 from flask import Flask, Blueprint, request, jsonify, session as flask_session
 from skatetrax.models.cyberconnect2 import Session, check_db_health
 from skatetrax.models.t_auth import uAuthTable
-import importlib
 
 # Create a blueprint instance
 auth_blueprint = Blueprint("auth_blueprint", __name__)
@@ -39,6 +38,8 @@ def login():
             return jsonify({"message": "Invalid credentials"}), 401
 
     flask_session['user_id'] = user.id
+    flask_session['uSkaterUUID'] = user.uSkaterUUID
+
     return jsonify({"message": "Login successful"})
 
 

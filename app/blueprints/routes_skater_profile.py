@@ -1,6 +1,7 @@
 from flask import Blueprint, jsonify, session as flask_session
 from skatetrax.models.cyberconnect2 import Session
 from skatetrax.models.t_auth import uAuthTable
+from skatetrax.models.ops.data_aggregates import UserMeta
 
 # Create a blueprint instance
 skater_profile_blueprint = Blueprint("skater_profile_blueprint", __name__)
@@ -16,4 +17,15 @@ def protected():
         if not user:
             return jsonify({"message": "Unauthorized"}), 401
 
-    return jsonify({"message": f"Welcome {user.aLogin}!"})
+    profile_obj = UserMeta.skater_profile(uSkaterUUID=flask_session['uSkaterUUID'])
+
+    # Convert SQLAlchemy object to a dict
+    profile = {
+        column.name: getattr(profile_obj, column.name)
+        for column in profile_obj.__table__.columns
+    } if profile_obj else None
+
+    return jsonify({
+        "message": f"Welcome {user.aLogin}!",
+        "profile": profile
+    })
