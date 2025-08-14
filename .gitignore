@@ -228,7 +228,7 @@ cython_debug/
 # SageMath parsed files
 
 # Environments
-
+.deploy
 # Spyder project settings
 
 # Rope project settings
