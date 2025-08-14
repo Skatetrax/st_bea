@@ -1,0 +1,11 @@
+git+https://github.com/Skatetrax/skatetrax_core.git@dev#egg=skatetrax_core
+Flask
+Werkzeug
+Flask-SQLAlchemy
+Flask-Migrate
+Flask-Login
+python-dotenv
+psycopg2-binary
+Flask-Cors
+passlib[bcrypt]
+gunicorn
