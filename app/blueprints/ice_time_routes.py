@@ -9,6 +9,8 @@ ice_time_blueprint = Blueprint("ice_time_blueprint", __name__)
 @ice_time_blueprint.route('/ice_time', methods=['GET'])
 def protected():
     user_id = flask_session.get('user_id')
+    uSkaterUUID=flask_session['uSkaterUUID']
+    
     if not user_id:
         return jsonify({"message": "Unauthorized"}), 401
 
@@ -17,9 +19,11 @@ def protected():
         if not user:
             return jsonify({"message": "Unauthorized"}), 401
 
-    total_time = SkaterAggregates(uSkaterUUID=flask_session['uSkaterUUID']).skated('total')
+    fsc = SkaterAggregates(uSkaterUUID).monthly_times_json()
+    total_time = SkaterAggregates(uSkaterUUID).skated('total')
 
     return jsonify({
-        # "message": f"Welcome {user.aLogin}!",
+
         "total_time": total_time,
+        "fsc_graph": fsc
     })

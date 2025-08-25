@@ -11,9 +11,31 @@ from blueprints.dashboard_routes import dashboard_blueprint
 from blueprints.ice_time_routes import ice_time_blueprint
 from blueprints.public_routes import locations_blueprint
 from blueprints.submit_routes import sessions_blueprint
+from blueprints.lookup_routes import lookup_blueprint
 
 app = Flask(__name__)
-CORS(app, supports_credentials=True, origins=["http://localhost:3000"])
+
+# CORS Configuration
+allowed_domains = [
+    "http://localhost:3000",
+    "http://192.168.32.169:3000",
+    "http://127.0.0.1:3000"
+        ]
+
+CORS(
+    app,
+    supports_credentials=True,
+    resources={r"/api/*": {"origins": allowed_domains}}
+)
+
+
+app.config['SESSION_COOKIE_NAME'] = 'session'
+app.config['SESSION_COOKIE_DOMAIN'] = "127.0.0.1"
+app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+app.config['SESSION_COOKIE_SECURE'] = False
+
+
 app.secret_key = os.environ.get("FLASK_SECRET_KEY")
 
 
@@ -21,6 +43,9 @@ app.secret_key = os.environ.get("FLASK_SECRET_KEY")
 app.register_blueprint(auth_blueprint, url_prefix='/api/v4/auth')
 app.register_blueprint(util_blueprint, url_prefix='/api/v4/utils')
 app.register_blueprint(locations_blueprint, url_prefix='/api/v4/public')
+
+# Protected Lookup Routes
+app.register_blueprint(lookup_blueprint, url_prefix='/api/v4/lookup')
 
 # Routes based on legacy structures
 app.register_blueprint(dashboard_blueprint, url_prefix='/api/v4/members')

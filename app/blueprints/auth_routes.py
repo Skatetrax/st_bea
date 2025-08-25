@@ -31,7 +31,7 @@ def register():
 @auth_blueprint.route('/login', methods=['POST'])
 def login():
     data = request.json
-
+    print("DATA RECEIVED:", data)  
     with Session() as db:
         user = db.query(uAuthTable).filter_by(aLogin=data['aLogin']).first()
         if not user or not user.check_password(data['aPasswordHash']):
@@ -41,6 +41,21 @@ def login():
     flask_session['uSkaterUUID'] = user.uSkaterUUID
 
     return jsonify({"message": "Login successful"})
+
+
+@auth_blueprint.route('/session', methods=['GET'])
+def session_check():
+    user_id = flask_session.get('user_id')
+    u_skater_uuid = flask_session.get('uSkaterUUID')
+
+    if not user_id:
+        return jsonify({"logged_in": False}), 401
+
+    return jsonify({
+        "logged_in": True,
+        "user_id": user_id,
+        "uSkaterUUID": u_skater_uuid
+    })
 
 
 @auth_blueprint.route('/logout', methods=['POST'])

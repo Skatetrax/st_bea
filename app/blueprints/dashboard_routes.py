@@ -24,23 +24,39 @@ def protected():
     total_time = ice_times.skated('total')
     monthly_hours_practice = ice_times.skated("current_month")
     monthly_hours_coached = ice_times.coached("current_month")
+    monthly_hours_group = ice_times.group_time("current_month")
     yearly_hours_practice = ice_times.skated("12m")
     yearly_hours_coached = ice_times.coached("12m")
+    yearly_hours_group = ice_times.group_time("12m")
     
     chart_maint = uMaintenanceV4(uSkaterUUID).maint_clock()
     
+    chart_spend = {
+        "equipment": "3,908.97",
+        "maintenance": "331.31",
+        "performance": "540.00",
+        "membership": "35.00",
+        "competition": "88.35",
+        "ice_time": "35.00",
+        "coaching": "4,520.00",
+        "class": "10,836.20",
+        "total": "20,294.83"
+    }
     
     return jsonify({
         "total_time": total_time,
         "charts": {
             "monthly_ratio": {
                 "practice": monthly_hours_practice,
-                "coached": monthly_hours_coached
+                "coached": monthly_hours_coached,
+                "group": monthly_hours_group
             },
             "yearly_ratio": {
                 "practice": yearly_hours_practice,
-                "coached": yearly_hours_coached
-            }
+                "coached": yearly_hours_coached,
+                "group": yearly_hours_group
+            },
+            "spend": chart_spend
         },
         "maintenance": chart_maint
     })
