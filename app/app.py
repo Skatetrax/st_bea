@@ -12,25 +12,19 @@ from blueprints.ice_time_routes import ice_time_blueprint
 from blueprints.public_routes import locations_blueprint
 from blueprints.submit_routes import sessions_blueprint
 from blueprints.lookup_routes import lookup_blueprint
+from blueprints.maintenance_routes import maintenance_blueprint
+from blueprints.equipment_routes import equipment_blueprint
 
 app = Flask(__name__)
 
-# CORS Configuration
-allowed_domains = [
-    "http://localhost:3000",
-    "http://192.168.32.169:3000",
-    "http://127.0.0.1:3000"
-        ]
-
+# CORS Configuration -- regex allows localhost, 127.0.0.1, and any 192.168.x.x
 CORS(
     app,
     supports_credentials=True,
-    resources={r"/api/*": {"origins": allowed_domains}}
+    resources={r"/api/*": {"origins": r"http://(localhost|127\.0\.0\.1|192\.168\.\d+\.\d+):3000"}}
 )
 
-
 app.config['SESSION_COOKIE_NAME'] = 'session'
-app.config['SESSION_COOKIE_DOMAIN'] = "127.0.0.1"
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 app.config['SESSION_COOKIE_SECURE'] = False
@@ -51,10 +45,12 @@ app.register_blueprint(lookup_blueprint, url_prefix='/api/v4/lookup')
 app.register_blueprint(dashboard_blueprint, url_prefix='/api/v4/members')
 app.register_blueprint(ice_time_blueprint, url_prefix='/api/v4/members')
 app.register_blueprint(skater_profile_blueprint, url_prefix='/api/v4/members')
+app.register_blueprint(maintenance_blueprint, url_prefix='/api/v4/members')
+app.register_blueprint(equipment_blueprint, url_prefix='/api/v4/members')
 
 # Routes for POST datas
 app.register_blueprint(sessions_blueprint, url_prefix='/api/v4/submit')
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(host='0.0.0.0', debug=True)

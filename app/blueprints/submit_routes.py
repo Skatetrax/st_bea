@@ -51,12 +51,14 @@ def add_icetime():
     if not data:
         return jsonify({"error": "Missing JSON payload"}), 400
 
-    # --- inject user UUID and user config into the payload ---
+    # --- inject user UUID and active config into the payload ---
     data['uSkaterUUID'] = uSkaterUUID
-    
-    # pull from session; fallback to default if missing FLAG
-    user = UserMeta(uSkaterUUID).to_dict()
-    data['uSkaterConfig'] = user['uSkaterComboIce']
+
+    meta = UserMeta(uSkaterUUID)
+    profile = meta.skater_profile()
+    if not profile or not profile.uSkaterComboIce:
+        return jsonify({"error": "No active skate config found"}), 400
+    data['uSkaterConfig'] = str(profile.uSkaterComboIce)
 
     # --- validate & normalize payload ---
     try:

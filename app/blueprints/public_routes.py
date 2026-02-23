@@ -1,3 +1,4 @@
+import math
 import pandas as pd
 from flask import Blueprint, jsonify, request
 from skatetrax.models.cyberconnect2 import Session
@@ -6,10 +7,19 @@ from skatetrax.models.ops.data_tables import Skating_Locations
 # Create a blueprint instance
 locations_blueprint = Blueprint("locations_blueprint", __name__)
 
+
+def _scrub_nan(records):
+    for row in records:
+        for k, v in row.items():
+            if isinstance(v, float) and math.isnan(v):
+                row[k] = None
+    return records
+
+
 @locations_blueprint.route("/rinks", methods=["GET"])
 def rinks():
     rink_list = Skating_Locations.rinks()
-    df_as_dict = rink_list.to_dict(orient="records")
+    df_as_dict = _scrub_nan(rink_list.to_dict(orient="records"))
 
     rink_id = request.args.get("id")
     state = request.args.get("state")

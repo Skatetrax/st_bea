@@ -1,6 +1,10 @@
 from flask import Blueprint, jsonify, session as flask_session
+import pandas as pd
+
 from skatetrax.models.cyberconnect2 import Session
+
 from skatetrax.models.t_auth import uAuthTable
+from skatetrax.models.ops.data_tables import Sessions_Tables
 from skatetrax.models.ops.data_aggregates import SkaterAggregates, uMaintenanceV4
 
 # Create a blueprint instance
@@ -19,18 +23,23 @@ def protected():
 
     uSkaterUUID=flask_session['uSkaterUUID']
     
+    # build various time line perspectives for coach/group/ice times
     ice_times = SkaterAggregates(uSkaterUUID)
     
     total_time = ice_times.skated('total')
-    monthly_hours_practice = ice_times.skated("current_month")
+
+    monthly_hours_practice = ice_times.practice("current_month")
     monthly_hours_coached = ice_times.coached("current_month")
     monthly_hours_group = ice_times.group_time("current_month")
-    yearly_hours_practice = ice_times.skated("12m")
+
+    yearly_hours_practice = ice_times.practice("12m")
     yearly_hours_coached = ice_times.coached("12m")
     yearly_hours_group = ice_times.group_time("12m")
     
+    # build maintenance chart data
     chart_maint = uMaintenanceV4(uSkaterUUID).maint_clock()
     
+    # pseudo-financial data
     chart_spend = {
         "equipment": "3,908.97",
         "maintenance": "331.31",
@@ -42,6 +51,10 @@ def protected():
         "class": "10,836.20",
         "total": "20,294.83"
     }
+    
+    # set up sessions table for current month
+    sessions = Sessions_Tables.ice_time_current_month(uSkaterUUID)
+    session_table = pd.DataFrame(sessions)
     
     return jsonify({
         "total_time": total_time,
@@ -58,5 +71,6 @@ def protected():
             },
             "spend": chart_spend
         },
-        "maintenance": chart_maint
+        "maintenance": chart_maint,
+        "session_table": session_table.to_dict(orient="records")
     })
