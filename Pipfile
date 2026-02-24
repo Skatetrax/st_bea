@@ -1,0 +1,24 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+skatetrax_core = {git = "https://github.com/Skatetrax/skatetrax_core.git", ref = "dev"}
+pydantic = "*"
+flask = "*"
+werkzeug = "*"
+flask-sqlalchemy = "*"
+flask-migrate = "*"
+flask-login = "*"
+python-dotenv = "*"
+psycopg2-binary = "*"
+flask-cors = "*"
+gunicorn = "*"
+skatetrax-core = {ref = "dev", git = "https://github.com/Skatetrax/skatetrax_core.git"}
+passlib = {extras = ["bcrypt"], version = "*"}
+
+[dev-packages]
+
+[requires]
+python_version = "3.13"
