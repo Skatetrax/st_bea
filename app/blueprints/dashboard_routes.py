@@ -1,9 +1,12 @@
+from datetime import date, timedelta
 from flask import Blueprint, jsonify, session as flask_session
 import pandas as pd
+from sqlalchemy import func
 
 from skatetrax.models.cyberconnect2 import Session
 
 from skatetrax.models.t_auth import uAuthTable
+from skatetrax.models.t_ice_time import Ice_Time
 from skatetrax.models.ops.data_tables import Sessions_Tables
 from skatetrax.models.ops.data_aggregates import SkaterAggregates, uMaintenanceV4
 
@@ -37,27 +40,86 @@ def protected():
     yearly_hours_group = ice_times.group_time("12m")
     
     # build maintenance chart data
-    chart_maint = uMaintenanceV4(uSkaterUUID).maint_clock()
-    
-    # pseudo-financial data
+    maint = uMaintenanceV4(uSkaterUUID)
+    chart_maint = maint.maint_clock()
+
+    # financial totals
+    equipment = ice_times.equipment_cost()
+    maintenance = maint.maint_cost()
+    class_fees = ice_times.school_class_cost()
+    performance = ice_times.test_cost()
+    membership = ice_times.membership_cost()
+    competition = ice_times.competition_cost()
+    ice_cost = ice_times.ice_cost()
+    coaching = ice_times.coach_cost()
+
+    spend_values = [equipment, maintenance, class_fees, performance,
+                     membership, competition, ice_cost, coaching]
+    spend_total = "%0.2f" % sum(float(v) for v in spend_values)
+
     chart_spend = {
-        "equipment": "3,908.97",
-        "maintenance": "331.31",
-        "performance": "540.00",
-        "membership": "35.00",
-        "competition": "88.35",
-        "ice_time": "35.00",
-        "coaching": "4,520.00",
-        "class": "10,836.20",
-        "total": "20,294.83"
+        "equipment": equipment,
+        "maintenance": maintenance,
+        "class": class_fees,
+        "performance": performance,
+        "membership": membership,
+        "competition": competition,
+        "ice_time": ice_cost,
+        "coaching": coaching,
+        "total": spend_total,
     }
     
+    # 3-month rolling baseline: average sessions/month for the 3 full
+    # calendar months preceding the current one
+    today = date.today()
+    first_of_this_month = today.replace(day=1)
+    baseline_end = first_of_this_month - timedelta(days=1)          # last day of prev month
+    m = baseline_end.month - 2
+    y = baseline_end.year
+    if m <= 0:
+        m += 12
+        y -= 1
+    baseline_start = date(y, m, 1)                                  # first day, 3 months back
+
+    with Session() as db:
+        baseline_total = (
+            db.query(func.count(Ice_Time.ice_time_id))
+            .filter(
+                Ice_Time.uSkaterUUID == uSkaterUUID,
+                Ice_Time.date >= baseline_start,
+                Ice_Time.date <= baseline_end,
+            )
+            .scalar() or 0
+        )
+    baseline_monthly_avg = round(baseline_total / 3, 1)
+
+    # 3-month average time breakdown (raw minutes -> divide by 3 -> hours/min)
+    bl_total_min = ice_times.aggregate(Ice_Time, "ice_time", baseline_start, baseline_end)
+    bl_coached_min = ice_times.aggregate(Ice_Time, "coach_time", baseline_start, baseline_end)
+    bl_group_min = ice_times.aggregate(
+        Ice_Time, "ice_time", baseline_start, baseline_end,
+        ice_type_ids=ice_times.GROUP_SESSION_IDS
+    )
+    bl_practice_min = max(bl_total_min - bl_coached_min - bl_group_min, 0)
+
+    def _avg_to_hm(total_minutes):
+        avg = total_minutes / 3
+        h, m = divmod(avg, 60)
+        return {"hours": int(h), "minutes": round(m, 1)}
+
+    baseline_ratio = {
+        "coached": _avg_to_hm(bl_coached_min),
+        "practice": _avg_to_hm(bl_practice_min),
+        "group": _avg_to_hm(bl_group_min),
+    }
+
     # set up sessions table for current month
     sessions = Sessions_Tables.ice_time_current_month(uSkaterUUID)
     session_table = pd.DataFrame(sessions)
     
     return jsonify({
         "total_time": total_time,
+        "baseline_monthly_avg": baseline_monthly_avg,
         "charts": {
             "monthly_ratio": {
                 "practice": monthly_hours_practice,
@@ -69,6 +131,7 @@ def protected():
                 "coached": yearly_hours_coached,
                 "group": yearly_hours_group
             },
+            "baseline_ratio": baseline_ratio,
             "spend": chart_spend
         },
         "maintenance": chart_maint,
