@@ -17,18 +17,21 @@ from blueprints.equipment_routes import equipment_blueprint
 
 app = Flask(__name__)
 
-# CORS Configuration -- regex allows localhost, 127.0.0.1, and any 192.168.x.x
+cors_origin = os.environ.get("CORS_ORIGIN", r"http://(localhost|127\.0\.0\.1|192\.168\.\d+\.\d+):3000")
 CORS(
     app,
     supports_credentials=True,
-    resources={r"/api/*": {"origins": r"http://(localhost|127\.0\.0\.1|192\.168\.\d+\.\d+):3000"}}
+    resources={r"/api/*": {"origins": cors_origin}}
 )
 
 app.config['SESSION_COOKIE_NAME'] = 'session'
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
-app.config['SESSION_COOKIE_SECURE'] = False
+app.config['SESSION_COOKIE_SECURE'] = os.environ.get("SESSION_COOKIE_SECURE", "false").lower() == "true"
 
+cookie_domain = os.environ.get("SESSION_COOKIE_DOMAIN")
+if cookie_domain:
+    app.config['SESSION_COOKIE_DOMAIN'] = cookie_domain
 
 app.secret_key = os.environ.get("FLASK_SECRET_KEY")
 
