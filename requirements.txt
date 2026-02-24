@@ -1,0 +1,11 @@
+Flask
+Werkzeug
+pydantic
+Flask-SQLAlchemy
+Flask-Migrate
+Flask-Login
+python-dotenv
+psycopg2-binary
+Flask-Cors
+passlib[bcrypt]
+gunicorn
