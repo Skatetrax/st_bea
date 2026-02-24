@@ -1,5 +1,5 @@
 from flask import Blueprint, jsonify, session as flask_session
-from skatetrax.models.cyberconnect2 import Session
+from skatetrax.models.cyberconnect2 import create_session
 from skatetrax.models.t_auth import uAuthTable
 from skatetrax.models.t_skaterMeta import uSkaterRoles
 from skatetrax.models.ops.data_aggregates import UserMeta
@@ -15,7 +15,7 @@ def skater_profile():
     if not user_id:
         return jsonify({"message": "Unauthorized"}), 401
 
-    with Session() as db:
+    with create_session() as db:
         auth_user = db.query(uAuthTable).filter_by(id=user_id).first()
         if not auth_user:
             return jsonify({"message": "Unauthorized"}), 401
@@ -46,7 +46,7 @@ def skater_profile():
     role_ids = user.get('uSkaterRoles') or []
     role_labels = []
     if role_ids:
-        with Session() as db:
+        with create_session() as db:
             roles = db.query(uSkaterRoles.label).filter(uSkaterRoles.id.in_(role_ids)).all()
             role_labels = [r.label for r in roles if r.label]
 

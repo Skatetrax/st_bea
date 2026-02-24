@@ -1,7 +1,7 @@
 from flask import Blueprint, jsonify, session as flask_session
 import pandas as pd
 
-from skatetrax.models.cyberconnect2 import Session
+from skatetrax.models.cyberconnect2 import create_session
 from skatetrax.models.t_auth import uAuthTable
 from skatetrax.models.ops.data_tables import Sessions_Tables
 from skatetrax.models.ops.data_aggregates import SkaterAggregates
@@ -12,15 +12,15 @@ ice_time_blueprint = Blueprint("ice_time_blueprint", __name__)
 @ice_time_blueprint.route('/ice_time', methods=['GET'])
 def protected():
     user_id = flask_session.get('user_id')
-    uSkaterUUID=flask_session['uSkaterUUID']
-    
     if not user_id:
         return jsonify({"message": "Unauthorized"}), 401
 
-    with Session() as db:
+    with create_session() as db:
         user = db.query(uAuthTable).filter_by(id=user_id).first()
         if not user:
             return jsonify({"message": "Unauthorized"}), 401
+
+    uSkaterUUID = flask_session['uSkaterUUID']
 
     fsc = SkaterAggregates(uSkaterUUID).monthly_times_json()
     total_time = SkaterAggregates(uSkaterUUID).skated('total')

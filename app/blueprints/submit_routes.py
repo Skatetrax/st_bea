@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify, session as flask_session
-from skatetrax.models.cyberconnect2 import Session as DBSession
+from skatetrax.models.cyberconnect2 import create_session
 from skatetrax.models.ops.data_aggregates import UserMeta
 from skatetrax.models.ops.pencil import AddSession
 
@@ -78,7 +78,7 @@ def add_icetime():
 
     # --- insert into DB ---
     try:
-        with DBSession() as db_session:
+        with create_session() as db_session:
             new_row = AddSession(db_session)(validated.dict())
     except Exception as e:
         print(f"[DB ERROR] {e}")

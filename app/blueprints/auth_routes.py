@@ -1,5 +1,5 @@
 from flask import Flask, Blueprint, request, jsonify, session as flask_session
-from skatetrax.models.cyberconnect2 import Session, check_db_health
+from skatetrax.models.cyberconnect2 import create_session, check_db_health
 from skatetrax.models.t_auth import uAuthTable
 
 # Create a blueprint instance
@@ -10,7 +10,7 @@ auth_blueprint = Blueprint("auth_blueprint", __name__)
 def register():
     data = request.json
 
-    with Session() as db:
+    with create_session() as db:
         existing = db.query(uAuthTable).filter_by(aLogin=data['aLogin']).first()
         if existing:
             return jsonify({"message": "User already exists"}), 400
@@ -31,8 +31,7 @@ def register():
 @auth_blueprint.route('/login', methods=['POST'])
 def login():
     data = request.json
-    print("DATA RECEIVED:", data)  
-    with Session() as db:
+    with create_session() as db:
         user = db.query(uAuthTable).filter_by(aLogin=data['aLogin']).first()
         if not user or not user.check_password(data['aPasswordHash']):
             return jsonify({"message": "Invalid credentials"}), 401

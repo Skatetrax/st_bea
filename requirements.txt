@@ -1,6 +1,6 @@
-git+https://github.com/Skatetrax/skatetrax_core.git@dev#egg=skatetrax_core
 Flask
 Werkzeug
+pydantic
 Flask-SQLAlchemy
 Flask-Migrate
 Flask-Login

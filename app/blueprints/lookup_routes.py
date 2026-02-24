@@ -1,7 +1,7 @@
 from flask import Blueprint, jsonify, request, session as flask_session
 import pandas as pd
 
-from skatetrax.models.cyberconnect2 import Session
+from skatetrax.models.cyberconnect2 import create_session
 from skatetrax.models.t_auth import uAuthTable
 from skatetrax.models.ops.data_tables import CoachesTable, Sessions_Tables
 
@@ -15,7 +15,7 @@ def protected_coaches():
     if not user_id:
         return jsonify({"message": "Unauthorized"}), 401
 
-    with Session() as db:
+    with create_session() as db:
         user = db.query(uAuthTable).filter_by(id=user_id).first()
         if not user:
             return jsonify({"message": "Unauthorized"}), 401
@@ -45,7 +45,7 @@ def ice_types():
     if not user_id:
         return jsonify({"message": "Unauthorized"}), 401
 
-    with Session() as db:
+    with create_session() as db:
         user = db.query(uAuthTable).filter_by(id=user_id).first()
         if not user:
             return jsonify({"message": "Unauthorized"}), 401

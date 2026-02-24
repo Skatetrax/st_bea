@@ -1,7 +1,7 @@
 import math
 import pandas as pd
 from flask import Blueprint, jsonify, request
-from skatetrax.models.cyberconnect2 import Session
+from skatetrax.models.cyberconnect2 import create_session
 from skatetrax.models.ops.data_tables import Skating_Locations
 
 # Create a blueprint instance

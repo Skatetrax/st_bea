@@ -229,6 +229,7 @@ cython_debug/
 
 # Environments
 .deploy
+!.deploy/.env.example
 # Spyder project settings
 
 # Rope project settings

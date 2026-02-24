@@ -3,7 +3,7 @@ from flask import Blueprint, jsonify, session as flask_session
 import pandas as pd
 from sqlalchemy import func
 
-from skatetrax.models.cyberconnect2 import Session
+from skatetrax.models.cyberconnect2 import create_session
 
 from skatetrax.models.t_auth import uAuthTable
 from skatetrax.models.t_ice_time import Ice_Time
@@ -19,7 +19,7 @@ def protected():
     if not user_id:
         return jsonify({"message": "Unauthorized"}), 401
 
-    with Session() as db:
+    with create_session() as db:
         user = db.query(uAuthTable).filter_by(id=user_id).first()
         if not user:
             return jsonify({"message": "Unauthorized"}), 401
@@ -81,7 +81,7 @@ def protected():
         y -= 1
     baseline_start = date(y, m, 1)                                  # first day, 3 months back
 
-    with Session() as db:
+    with create_session() as db:
         baseline_total = (
             db.query(func.count(Ice_Time.ice_time_id))
             .filter(
