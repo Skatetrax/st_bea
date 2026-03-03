@@ -1,4 +1,5 @@
 from flask import Blueprint, request, jsonify, session as flask_session
+from flask_login import login_required, current_user
 from skatetrax.models.cyberconnect2 import create_session
 from skatetrax.models.ops.data_aggregates import UserMeta
 from skatetrax.models.ops.pencil import AddSession
@@ -35,14 +36,10 @@ class IceTimePayload(BaseModel):
 sessions_blueprint = Blueprint("sessions_blueprint", __name__)
 
 @sessions_blueprint.route('add_icetime', methods=['POST'])
+@login_required
 def add_icetime():
-    # --- session auth check ---
-    user_id = flask_session.get('user_id')
-    if not user_id:
-        return jsonify({"error": "Unauthorized"}), 401
-
     # --- grab logged-in user's skater UUID ---
-    uSkaterUUID = flask_session.get('uSkaterUUID')
+    uSkaterUUID = getattr(current_user, "uSkaterUUID", None) or flask_session.get("uSkaterUUID")
     if not uSkaterUUID:
         return jsonify({"error": "Missing skater UUID"}), 400
 
