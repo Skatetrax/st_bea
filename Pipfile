@@ -17,8 +17,10 @@ flask-cors = "*"
 gunicorn = "*"
 skatetrax-core = {ref = "dev", git = "https://github.com/Skatetrax/skatetrax_core.git"}
 passlib = {extras = ["bcrypt"], version = "*"}
+flask-security = "*"
+flask-mail = "*"
 
 [dev-packages]
 
 [requires]
-python_version = "3.13"
+python_version = "3.14"

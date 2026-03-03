@@ -2,10 +2,9 @@ from datetime import date, timedelta
 from flask import Blueprint, jsonify, session as flask_session
 import pandas as pd
 from sqlalchemy import func
+from flask_login import login_required, current_user
 
 from skatetrax.models.cyberconnect2 import create_session
-
-from skatetrax.models.t_auth import uAuthTable
 from skatetrax.models.t_ice_time import Ice_Time
 from skatetrax.models.ops.data_tables import Sessions_Tables
 from skatetrax.models.ops.data_aggregates import SkaterAggregates, uMaintenanceV4
@@ -13,18 +12,11 @@ from skatetrax.models.ops.data_aggregates import SkaterAggregates, uMaintenanceV
 # Create a blueprint instance
 dashboard_blueprint = Blueprint("dashboard_blueprint", __name__)
 
+
 @dashboard_blueprint.route('/dashboard', methods=['GET'])
+@login_required
 def protected():
-    user_id = flask_session.get('user_id')
-    if not user_id:
-        return jsonify({"message": "Unauthorized"}), 401
-
-    with create_session() as db:
-        user = db.query(uAuthTable).filter_by(id=user_id).first()
-        if not user:
-            return jsonify({"message": "Unauthorized"}), 401
-
-    uSkaterUUID=flask_session['uSkaterUUID']
+    uSkaterUUID = getattr(current_user, "uSkaterUUID", None) or flask_session.get("uSkaterUUID")
     
     # build various time line perspectives for coach/group/ice times
     ice_times = SkaterAggregates(uSkaterUUID)
