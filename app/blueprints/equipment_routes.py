@@ -1,8 +1,7 @@
 from flask import Blueprint, jsonify, session as flask_session
 import pandas as pd
+from flask_login import login_required, current_user
 
-from skatetrax.models.cyberconnect2 import create_session
-from skatetrax.models.t_auth import uAuthTable
 from skatetrax.models.ops.data_tables import Equipment
 from skatetrax.models.ops.data_aggregates import Equipment as EquipmentAgg
 
@@ -10,17 +9,9 @@ equipment_blueprint = Blueprint("equipment_blueprint", __name__)
 
 
 @equipment_blueprint.route('/equipment', methods=['GET'])
+@login_required
 def equipment_overview():
-    user_id = flask_session.get('user_id')
-    if not user_id:
-        return jsonify({"message": "Unauthorized"}), 401
-
-    with create_session() as db:
-        user = db.query(uAuthTable).filter_by(id=user_id).first()
-        if not user:
-            return jsonify({"message": "Unauthorized"}), 401
-
-    uSkaterUUID = flask_session['uSkaterUUID']
+    uSkaterUUID = getattr(current_user, "uSkaterUUID", None) or flask_session.get("uSkaterUUID")
 
     active = EquipmentAgg.config_active(uSkaterUUID)
 

@@ -4,8 +4,12 @@ pydantic
 Flask-SQLAlchemy
 Flask-Migrate
 Flask-Login
+Flask-Security-Too
+Flask-WTF
+email-validator
 python-dotenv
 psycopg2-binary
 Flask-Cors
+Flask-Mail
 passlib[bcrypt]
 gunicorn

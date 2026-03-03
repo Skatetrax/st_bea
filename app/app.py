@@ -1,7 +1,11 @@
 import os
+import warnings
 
 from flask_cors import CORS
 from flask import Flask
+from flask_security import Security
+
+from user_datastore import skatetrax_user_datastore
 
 # Load blueprints
 from blueprints.auth_routes import auth_blueprint
@@ -17,7 +21,12 @@ from blueprints.equipment_routes import equipment_blueprint
 
 app = Flask(__name__)
 
-cors_origin = os.environ.get("CORS_ORIGIN", r"http://(localhost|127\.0\.0\.1|192\.168\.\d+\.\d+):3000")
+cors_origin_env = os.environ.get("CORS_ORIGIN")
+if cors_origin_env:
+    cors_origin = [o.strip() for o in cors_origin_env.split(",")]
+else:
+    cors_origin = r"http://(localhost|127\.0\.0\.1|192\.168\.\d+\.\d+):3000"
+
 CORS(
     app,
     supports_credentials=True,
@@ -34,7 +43,31 @@ if cookie_domain:
     app.config['SESSION_COOKIE_DOMAIN'] = cookie_domain
 
 app.secret_key = os.environ.get("FLASK_SECRET_KEY")
+if not app.secret_key:
+    if os.environ.get("FLASK_ENV") == "production":
+        raise RuntimeError("FLASK_SECRET_KEY must be set in production")
+    warnings.warn("FLASK_SECRET_KEY not set -- using ephemeral key; sessions will not persist across restarts")
+    app.secret_key = os.urandom(32).hex()
 
+# Flask-Security-Too (Phase 1: auth only; no FST blueprint, we use our own auth routes)
+app.config.setdefault("SECURITY_PASSWORD_SALT", os.environ.get("SECURITY_PASSWORD_SALT", "skatetrax-salt"))
+app.config.setdefault("SECURITY_REGISTERABLE", False)
+app.config.setdefault("SECURITY_SEND_REGISTER_EMAIL", False)
+app.config.setdefault("SECURITY_RECOVERABLE", False)
+security = Security(app, datastore=skatetrax_user_datastore, register_blueprint=False)
+
+# Flask-Mail (optional; only initialized when MAIL_SERVER is set)
+mail = None
+if os.environ.get("MAIL_SERVER"):
+    from flask_mail import Mail
+    app.config["MAIL_SERVER"] = os.environ["MAIL_SERVER"]
+    app.config["MAIL_PORT"] = int(os.environ.get("MAIL_PORT", 587))
+    app.config["MAIL_USE_TLS"] = os.environ.get("MAIL_USE_TLS", "false").lower() == "true"
+    app.config["MAIL_USE_SSL"] = os.environ.get("MAIL_USE_SSL", "false").lower() == "true"
+    app.config["MAIL_USERNAME"] = os.environ.get("MAIL_USERNAME")
+    app.config["MAIL_PASSWORD"] = os.environ.get("MAIL_PASSWORD")
+    app.config["MAIL_DEFAULT_SENDER"] = os.environ.get("MAIL_DEFAULT_SENDER", "noreply@skatetrax.com")
+    mail = Mail(app)
 
 # Public/Diag/Auth End Points
 app.register_blueprint(auth_blueprint, url_prefix='/api/v4/auth')

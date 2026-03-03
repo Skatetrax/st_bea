@@ -1,7 +1,5 @@
 from flask import Blueprint, jsonify, session as flask_session
-from skatetrax.models.cyberconnect2 import create_session
-from skatetrax.models.t_auth import uAuthTable
-from skatetrax.models.t_skaterMeta import uSkaterRoles
+from flask_login import login_required, current_user
 from skatetrax.models.ops.data_aggregates import UserMeta
 
 
@@ -10,20 +8,12 @@ skater_profile_blueprint = Blueprint("skater_profile_blueprint", __name__)
 
 
 @skater_profile_blueprint.route('/skater_overview', methods=['GET'])
+@login_required
 def skater_profile():
-    user_id = flask_session.get('user_id')
-    if not user_id:
-        return jsonify({"message": "Unauthorized"}), 401
-
-    with create_session() as db:
-        auth_user = db.query(uAuthTable).filter_by(id=user_id).first()
-        if not auth_user:
-            return jsonify({"message": "Unauthorized"}), 401
-        auth_email = auth_user.aEmail
-        auth_phone = auth_user.phone_number
-        auth_username = auth_user.aLogin
-
-    uSkaterUUID = flask_session['uSkaterUUID']
+    auth_email = getattr(current_user, "aEmail", None)
+    auth_phone = getattr(current_user, "phone_number", None)
+    auth_username = getattr(current_user, "aLogin", None)
+    uSkaterUUID = getattr(current_user, "uSkaterUUID", None) or flask_session.get("uSkaterUUID")
 
     meta = UserMeta(uSkaterUUID)
     user = meta.to_dict()
@@ -43,12 +33,7 @@ def skater_profile():
         "phone": auth_phone,
         "username": auth_username,
     }
-    role_ids = user.get('uSkaterRoles') or []
-    role_labels = []
-    if role_ids:
-        with create_session() as db:
-            roles = db.query(uSkaterRoles.label).filter(uSkaterRoles.id.in_(role_ids)).all()
-            role_labels = [r.label for r in roles if r.label]
+    role_labels = [r.name for r in getattr(current_user, "roles", []) if r.name]
 
     user_meta = {
         'user_creation_date': user['date_created'],
