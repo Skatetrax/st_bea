@@ -1,0 +1,27 @@
+name: Build and Push Dev Image
+
+on:
+  push:
+    branches: [dev]
+
+jobs:
+  build-push-dev:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push dev image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          build-args: CORE_BRANCH=main
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/skatetrax_backend:dev
