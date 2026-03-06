@@ -2,7 +2,7 @@ import os
 import warnings
 
 from flask_cors import CORS
-from flask import Flask
+from flask import Flask, jsonify
 from flask_security import Security
 
 from user_datastore import skatetrax_user_datastore
@@ -18,6 +18,7 @@ from blueprints.submit_routes import sessions_blueprint
 from blueprints.lookup_routes import lookup_blueprint
 from blueprints.maintenance_routes import maintenance_blueprint
 from blueprints.equipment_routes import equipment_blueprint
+from blueprints.events_routes import events_blueprint
 
 app = Flask(__name__)
 
@@ -56,6 +57,10 @@ app.config.setdefault("SECURITY_SEND_REGISTER_EMAIL", False)
 app.config.setdefault("SECURITY_RECOVERABLE", False)
 security = Security(app, datastore=skatetrax_user_datastore, register_blueprint=False)
 
+@app.login_manager.unauthorized_handler
+def _unauthorized():
+    return jsonify({"error": "Authentication required"}), 401
+
 # Flask-Mail (optional; only initialized when MAIL_SERVER is set)
 mail = None
 if os.environ.get("MAIL_SERVER"):
@@ -83,6 +88,9 @@ app.register_blueprint(ice_time_blueprint, url_prefix='/api/v4/members')
 app.register_blueprint(skater_profile_blueprint, url_prefix='/api/v4/members')
 app.register_blueprint(maintenance_blueprint, url_prefix='/api/v4/members')
 app.register_blueprint(equipment_blueprint, url_prefix='/api/v4/members')
+
+# Events (competitions, showcases, exhibitions)
+app.register_blueprint(events_blueprint, url_prefix='/api/v4/events')
 
 # Routes for POST datas
 app.register_blueprint(sessions_blueprint, url_prefix='/api/v4/submit')
