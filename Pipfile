@@ -4,21 +4,24 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-skatetrax_core = {git = "https://github.com/Skatetrax/skatetrax_core.git", ref = "dev"}
-pydantic = "*"
 flask = "*"
 werkzeug = "*"
+pydantic = "*"
 flask-sqlalchemy = "*"
 flask-migrate = "*"
 flask-login = "*"
+flask-security-too = "*"
+flask-wtf = "*"
+flask-cors = "*"
+flask-mail = "*"
+email-validator = "*"
 python-dotenv = "*"
 psycopg2-binary = "*"
-flask-cors = "*"
 gunicorn = "*"
-skatetrax-core = {ref = "dev", git = "https://github.com/Skatetrax/skatetrax_core.git"}
+requests = "*"
 passlib = {extras = ["bcrypt"], version = "*"}
-flask-security = "*"
-flask-mail = "*"
+beautifulsoup4 = "*"
+skatetrax_core = {git = "https://github.com/Skatetrax/skatetrax_core.git", ref = "dev"}
 
 [dev-packages]
 

@@ -1,6 +1,6 @@
 from flask import Blueprint, jsonify, session as flask_session
 from flask_login import login_required, current_user
-from skatetrax.models.ops.data_aggregates import UserMeta
+from skatetrax.models.ops.data_aggregates import UserMeta, SkaterAggregates
 
 
 # Create a blueprint instance
@@ -52,11 +52,14 @@ def skater_profile():
         'usfsa_number': user['org_USFSA_number'],
     }
 
+    total_ice_time = SkaterAggregates(uSkaterUUID).skated('total')
+
     response = {
         'user_general': user_general,
         'user_contact': user_contact,
         'user_meta': user_meta,
         'user_memberships': user_memberships,
+        'total_ice_time': total_ice_time,
     }
 
     return jsonify(response)
