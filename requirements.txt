@@ -6,10 +6,12 @@ Flask-Migrate
 Flask-Login
 Flask-Security-Too
 Flask-WTF
+Flask-Cors
+Flask-Mail
 email-validator
 python-dotenv
 psycopg2-binary
-Flask-Cors
-Flask-Mail
-passlib[bcrypt]
 gunicorn
+requests
+passlib[bcrypt]
+beautifulsoup4
