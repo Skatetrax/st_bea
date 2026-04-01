@@ -18,8 +18,8 @@ log = logging.getLogger(__name__)
 
 music_blueprint = Blueprint("music_blueprint", __name__)
 
-MAX_DURATION_SECONDS = 300
 MAX_FILE_BYTES = 20 * 1024 * 1024
+PERFORMANCE_CUT_CEILING = 300
 
 
 def _get_skater_uuid():
@@ -144,8 +144,11 @@ def upload_track():
     except Exception:
         return jsonify({"error": "Could not read audio file -- unsupported format"}), 400
 
-    if duration > MAX_DURATION_SECONDS:
-        return jsonify({"error": f"Track exceeds {MAX_DURATION_SECONDS // 60} minute limit ({duration}s)"}), 400
+    duration_hint = None
+    if duration <= PERFORMANCE_CUT_CEILING:
+        duration_hint = "performance_cut"
+    else:
+        duration_hint = "practice"
 
     meta_json = request.form.get("metadata", "{}")
     try:
@@ -179,7 +182,9 @@ def upload_track():
         sess.add(track)
         sess.commit()
         sess.refresh(track)
-        return jsonify(_track_to_dict(track)), 201
+        result = _track_to_dict(track)
+        result["duration_hint"] = duration_hint
+        return jsonify(result), 201
 
 
 @music_blueprint.route('/tracks/<track_id>', methods=['DELETE'])
