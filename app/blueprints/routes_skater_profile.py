@@ -45,6 +45,8 @@ def skater_profile():
         'user_primary_coach_id': str(profile.activeCoach) if profile and profile.activeCoach else None,
         'user_ice_config': user['uSkaterComboIce'],
         'user_roles': role_labels,
+        'contact_preference': user.get('contact_preference'),
+        'share_token': user.get('share_token'),
     }
     user_memberships = {
         'affiliated_club_name': user['org_Club'],

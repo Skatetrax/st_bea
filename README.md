@@ -165,6 +165,42 @@ Password reset emails require Flask-Mail. Set these env vars to enable:
 | `MAIL_DEFAULT_SENDER` | No | `noreply@skatetrax.com` | From address for outgoing email. |
 | `RESET_URL_BASE` | No | *(unset)* | Frontend password-reset page URL. Token is appended as `?token=...`. |
 
+---
+
+## Skater Card
+
+The Skater Card is a shareable, resume-style summary of a skater's history. It includes identity info, lifetime stats, recent (3-month rolling) training data, current setup, and shared playlists. The public version omits direct contact info -- only the preferred contact method label is shown.
+
+### Endpoints
+
+#### `GET /api/v4/members/skater_card`
+Returns the full card data for the authenticated user. Used for preview and the authenticated card page.
+
+#### `POST /api/v4/members/skater_card/share`
+Generates a UUID share token (if one doesn't exist) and returns it. The frontend constructs the public URL from this token.
+
+**Response:** `{"share_token": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"}`
+
+#### `DELETE /api/v4/members/skater_card/share`
+Revokes the share token, making the public card URL return a 404.
+
+**Response:** `{"status": "ok"}`
+
+#### `GET /api/v4/members/shared_card/<share_token>`
+Public endpoint (no auth required). Returns the same card structure minus the share token. Returns 404 if the token is invalid or has been revoked.
+
+#### `PATCH /api/v4/members/contact_preference`
+Set or clear the skater's preferred contact method.
+
+**Payload:**
+```json
+{"contact_preference": "email"}
+```
+
+Accepted values: `email`, `text`, `phone`, `social`, or `null` to clear.
+
+---
+
 ### Two-phase user setup
 
 1. **Registration** creates the `uAuthTable` auth record and assigns roles. The user can authenticate but has no skater profile yet.

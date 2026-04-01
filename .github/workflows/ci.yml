@@ -28,6 +28,12 @@ jobs:
         run: python -c "from app import app; print('App loads OK')"
         working-directory: app
 
+      - name: Audit dependencies
+        run: |
+          pip install pip-audit
+          pip-audit || true
+        continue-on-error: true
+
       - name: Docker build (no push)
         uses: docker/build-push-action@v6
         with:
