@@ -41,7 +41,7 @@ class CreateEventPayload(BaseModel):
     event_label: str
     event_date: date
     event_location: UUID | None = None
-    hosting_club: str | None = None
+    hosting_club: UUID | None = None
     coach_id: UUID | None = None
     notes: str | None = None
     costs: list[CostItemPayload] = []

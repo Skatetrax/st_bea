@@ -3,6 +3,7 @@ import pandas as pd
 from flask import Blueprint, jsonify, request
 from skatetrax.models.cyberconnect2 import create_session
 from skatetrax.models.ops.data_tables import Skating_Locations
+from skatetrax.models.t_memberships import Club_Directory
 
 # Create a blueprint instance
 locations_blueprint = Blueprint("locations_blueprint", __name__)
@@ -40,3 +41,17 @@ def rinks():
         return jsonify(filtered[0])
 
     return jsonify(filtered)
+
+
+@locations_blueprint.route("/clubs", methods=["GET"])
+def clubs():
+    with create_session() as sess:
+        rows = sess.query(
+            Club_Directory.club_id,
+            Club_Directory.club_name,
+        ).order_by(Club_Directory.club_name).all()
+
+    return jsonify([
+        {"club_id": str(r.club_id), "club_name": r.club_name}
+        for r in rows
+    ])
