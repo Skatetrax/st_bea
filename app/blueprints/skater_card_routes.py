@@ -5,8 +5,9 @@ from flask_login import login_required, current_user
 
 from skatetrax.models.cyberconnect2 import create_session
 from skatetrax.models.t_skaterMeta import uSkaterConfig
-from skatetrax.models.t_music import MusicPlaylist
-from skatetrax.models.t_events import SkaterEvent, EventEntry
+from skatetrax.models.t_music import MusicPlaylist, MusicPlaylistTrack
+from sqlalchemy import func, distinct
+from skatetrax.models.t_events import SkaterEvent, EventEntry, EventType
 from skatetrax.models.t_locations import Locations
 from skatetrax.models.ops.data_aggregates import UserMeta, SkaterAggregates
 
@@ -62,6 +63,11 @@ def _build_card(uuid):
             sess.query(MusicPlaylist.name, MusicPlaylist.share_token)
             .filter(MusicPlaylist.uSkaterUUID == uuid,
                     MusicPlaylist.share_token.isnot(None))
+            .filter(
+                sess.query(MusicPlaylistTrack)
+                .filter(MusicPlaylistTrack.playlist_id == MusicPlaylist.id)
+                .exists()
+            )
             .all()
         )
         shared_playlist_list = [
@@ -69,18 +75,46 @@ def _build_card(uuid):
             for p in shared_playlists
         ]
 
+        comp_join = (EventEntry.event_type == EventType.id)
+        comp_cat = (EventType.category == "Competition")
+
+        comp_events = (
+            sess.query(func.count(distinct(SkaterEvent.id)))
+            .join(EventEntry, EventEntry.event_id == SkaterEvent.id)
+            .join(EventType, comp_join)
+            .filter(comp_cat, SkaterEvent.uSkaterUUID == uuid)
+            .scalar()
+        )
+        comp_entries = (
+            sess.query(func.count(EventEntry.id))
+            .join(EventType, comp_join)
+            .filter(comp_cat, EventEntry.uSkaterUUID == uuid)
+            .scalar()
+        )
+        comp_podiums = (
+            sess.query(func.count(EventEntry.id))
+            .join(EventType, comp_join)
+            .filter(
+                comp_cat,
+                EventEntry.uSkaterUUID == uuid,
+                EventEntry.placement.isnot(None),
+                EventEntry.placement <= 3,
+            )
+            .scalar()
+        )
+
         last_event_row = (
             sess.query(
                 SkaterEvent.event_label,
                 SkaterEvent.event_date,
-                EventEntry.event_segment,
                 Locations.rink_city,
                 Locations.rink_state,
             )
             .join(EventEntry, EventEntry.event_id == SkaterEvent.id)
+            .join(EventType, comp_join)
             .outerjoin(Locations, SkaterEvent.event_location == Locations.rink_id)
-            .filter(EventEntry.uSkaterUUID == uuid)
-            .order_by(SkaterEvent.event_date.desc(), EventEntry.id.desc())
+            .filter(comp_cat, EventEntry.uSkaterUUID == uuid)
+            .order_by(SkaterEvent.event_date.desc())
             .first()
         )
 
@@ -89,15 +123,11 @@ def _build_card(uuid):
             loc_parts = [last_event_row.rink_city, last_event_row.rink_state]
             loc_str = ", ".join(p for p in loc_parts if p)
             evt_date = last_event_row.event_date
-            date_str = evt_date.strftime("%B %Y") if evt_date else None
-            parts = [last_event_row.event_label]
-            if last_event_row.event_segment:
-                parts.append(last_event_row.event_segment)
-            if date_str:
-                parts.append(date_str)
-            if loc_str:
-                parts.append(loc_str)
-            last_event = " · ".join(parts)
+            last_event = {
+                "name": last_event_row.event_label,
+                "date": evt_date.strftime("%B %Y") if evt_date else None,
+                "location": loc_str or None,
+            }
 
     return {
         "identity": {
@@ -117,9 +147,9 @@ def _build_card(uuid):
             "solo_pct": round(solo_h / total_h * 100) if total_h else 0,
             "sessions_per_week": round(total_sessions / weeks_active, 1) if weeks_active else 0,
             "avg_session_min": round(total_h * 60 / total_sessions) if total_sessions else 0,
-            "events": agg.event_count("total"),
-            "entries": agg.entry_count("total"),
-            "podiums": agg.podium_count("total"),
+            "events": comp_events,
+            "entries": comp_entries,
+            "podiums": comp_podiums,
             "previous_coaches": agg.distinct_coach_count("total"),
         },
         "recent": (lambda rh, rc, rg, rs, rsess: {
@@ -141,7 +171,8 @@ def _build_card(uuid):
         "current": {
             "coach": profile_dict.get("activeCoach"),
             "home_rink": profile_dict.get("uSkaterRinkPref"),
-            "equipment": profile_dict.get("uSkaterComboIce"),
+            "boots": (profile_dict.get("uSkaterComboIce") or "").split(" / ")[0] or None,
+            "blades": (profile_dict.get("uSkaterComboIce") or "").split(" / ")[1] if " / " in (profile_dict.get("uSkaterComboIce") or "") else None,
             "shared_playlists": shared_playlist_list,
         },
         "share_token": profile_dict.get("share_token"),
