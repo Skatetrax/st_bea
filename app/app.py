@@ -19,6 +19,8 @@ from blueprints.lookup_routes import lookup_blueprint
 from blueprints.maintenance_routes import maintenance_blueprint
 from blueprints.equipment_routes import equipment_blueprint
 from blueprints.events_routes import events_blueprint
+from blueprints.music_routes import music_blueprint
+from blueprints.skater_card_routes import skater_card_blueprint
 
 app = Flask(__name__)
 
@@ -91,6 +93,12 @@ app.register_blueprint(equipment_blueprint, url_prefix='/api/v4/members')
 
 # Events (competitions, showcases, exhibitions)
 app.register_blueprint(events_blueprint, url_prefix='/api/v4/events')
+
+# Music library
+app.register_blueprint(music_blueprint, url_prefix='/api/v4/music')
+
+# Skater card (share + profile)
+app.register_blueprint(skater_card_blueprint, url_prefix='/api/v4/members')
 
 # Routes for POST datas
 app.register_blueprint(sessions_blueprint, url_prefix='/api/v4/submit')

@@ -60,25 +60,14 @@ def add_icetime():
     # --- validate & normalize payload ---
     try:
         validated = IceTimePayload(**data)
-        print("[VALIDATION] Payload successfully validated.")
     except ValidationError as ve:
-        print("[VALIDATION ERROR] One or more fields failed:")
-        for err in ve.errors():
-            print(f"  Field '{err['loc'][0]}': {err['msg']}")
         return jsonify({"error": "Invalid input", "details": ve.errors()}), 400
-
-    # --- log type conversions ---
-    for key, value in validated.dict().items():
-        if str(data.get(key)) != str(value):
-            print(f"[TYPE COERCION] Field '{key}' was converted from {data.get(key)} ({type(data.get(key))}) "
-                  f"to {value} ({type(value)})")
 
     # --- insert into DB ---
     try:
         with create_session() as db_session:
             new_row = AddSession(db_session)(validated.dict())
     except Exception as e:
-        print(f"[DB ERROR] {e}")
         return jsonify({"error": str(e)}), 400
 
     return jsonify({

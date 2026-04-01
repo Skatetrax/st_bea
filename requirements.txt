@@ -13,5 +13,7 @@ python-dotenv
 psycopg2-binary
 gunicorn
 requests
-passlib[bcrypt]
+bcrypt
 beautifulsoup4
+boto3
+mutagen
