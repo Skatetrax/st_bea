@@ -3,7 +3,7 @@ import pandas as pd
 from flask_login import login_required, current_user
 
 from skatetrax.models.ops.data_tables import Sessions_Tables
-from skatetrax.models.ops.data_aggregates import SkaterAggregates
+from skatetrax.models.ops.data_aggregates import SkaterAggregates, UserMeta
 
 # Create a blueprint instance
 ice_time_blueprint = Blueprint("ice_time_blueprint", __name__)
@@ -17,11 +17,15 @@ def protected():
     months_back = min(max(int(request.args.get("months_back", 0)), 0), 120)
     window = min(max(int(request.args.get("window", 12)), 1), 36)
 
-    agg = SkaterAggregates(uSkaterUUID)
+    meta = UserMeta(uSkaterUUID)
+    prof = meta.skater_profile()
+    skater_tz = prof.uSkaterTZ if prof else None
+
+    agg = SkaterAggregates(uSkaterUUID, tz=skater_tz)
     fsc = agg.monthly_times_json(months_back=months_back, window=window)
     total_time = agg.skated('total')
 
-    sessions = Sessions_Tables.ice_time(uSkaterUUID)
+    sessions = Sessions_Tables.ice_time(uSkaterUUID, tz=skater_tz)
     session_table = pd.DataFrame(sessions)
 
     return jsonify({

@@ -7,7 +7,8 @@ from flask_login import login_required, current_user
 from skatetrax.models.cyberconnect2 import create_session
 from skatetrax.models.t_ice_time import Ice_Time
 from skatetrax.models.ops.data_tables import Sessions_Tables
-from skatetrax.models.ops.data_aggregates import SkaterAggregates, uMaintenanceV4
+from skatetrax.models.ops.data_aggregates import SkaterAggregates, uMaintenanceV4, UserMeta
+from skatetrax.utils.tz import utc_naive_range_for_inclusive_local_dates, resolve_tz, today_in_tz
 
 # Create a blueprint instance
 dashboard_blueprint = Blueprint("dashboard_blueprint", __name__)
@@ -17,9 +18,14 @@ dashboard_blueprint = Blueprint("dashboard_blueprint", __name__)
 @login_required
 def protected():
     uSkaterUUID = getattr(current_user, "uSkaterUUID", None) or flask_session.get("uSkaterUUID")
-    
+
+    meta = UserMeta(uSkaterUUID)
+    prof = meta.skater_profile()
+    skater_tz = prof.uSkaterTZ if prof else None
+    tz_resolved = resolve_tz(None, skater_tz)
+
     # build various time line perspectives for coach/group/ice times
-    ice_times = SkaterAggregates(uSkaterUUID)
+    ice_times = SkaterAggregates(uSkaterUUID, tz=skater_tz)
     
     total_time = ice_times.skated('total')
 
@@ -62,8 +68,8 @@ def protected():
     }
     
     # 3-month rolling baseline: average sessions/month for the 3 full
-    # calendar months preceding the current one
-    today = date.today()
+    # calendar months preceding the current one (skater-local calendar)
+    today = today_in_tz(skater_tz)
     first_of_this_month = today.replace(day=1)
     baseline_end = first_of_this_month - timedelta(days=1)          # last day of prev month
     m = baseline_end.month - 2
@@ -73,13 +79,16 @@ def protected():
         y -= 1
     baseline_start = date(y, m, 1)                                  # first day, 3 months back
 
+    bl_lo, bl_hi_excl = utc_naive_range_for_inclusive_local_dates(
+        baseline_start, baseline_end, tz_resolved
+    )
     with create_session() as db:
         baseline_total = (
             db.query(func.count(Ice_Time.ice_time_id))
             .filter(
                 Ice_Time.uSkaterUUID == uSkaterUUID,
-                Ice_Time.date >= baseline_start,
-                Ice_Time.date <= baseline_end,
+                Ice_Time.date >= bl_lo,
+                Ice_Time.date < bl_hi_excl,
             )
             .scalar() or 0
         )
@@ -106,7 +115,7 @@ def protected():
     }
 
     # set up sessions table for current month
-    sessions = Sessions_Tables.ice_time_current_month(uSkaterUUID)
+    sessions = Sessions_Tables.ice_time_current_month(uSkaterUUID, tz=skater_tz)
     session_table = pd.DataFrame(sessions)
     
     return jsonify({
