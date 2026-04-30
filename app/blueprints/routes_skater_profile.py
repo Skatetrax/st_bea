@@ -54,7 +54,9 @@ def skater_profile():
         'usfsa_number': user['org_USFSA_number'],
     }
 
-    total_ice_time = SkaterAggregates(uSkaterUUID).skated('total')
+    total_ice_time = SkaterAggregates(
+        uSkaterUUID, tz=(profile.uSkaterTZ if profile else None)
+    ).skated('total')
 
     response = {
         'user_general': user_general,

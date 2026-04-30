@@ -40,7 +40,7 @@ def _build_card(uuid):
     if not profile_dict:
         return None
 
-    agg = SkaterAggregates(uuid)
+    agg = SkaterAggregates(uuid, tz=profile_dict.get("uSkaterTZ"))
 
     earliest = agg.earliest_session_date()
     total_sessions = agg.session_count("total")
