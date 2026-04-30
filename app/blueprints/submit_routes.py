@@ -3,6 +3,7 @@ from flask_login import login_required, current_user
 from skatetrax.models.cyberconnect2 import create_session
 from skatetrax.models.ops.data_aggregates import UserMeta
 from skatetrax.models.ops.pencil import AddSession
+from skatetrax.utils.tz import local_date_start_as_utc_naive, resolve_tz
 
 import datetime
 from uuid import UUID
@@ -63,10 +64,15 @@ def add_icetime():
     except ValidationError as ve:
         return jsonify({"error": "Invalid input", "details": ve.errors()}), 400
 
+    # --- persist: calendar date is in the skater's TZ; store start-of-local-day as naive UTC ---
+    user_tz = resolve_tz(None, profile.uSkaterTZ)
+    payload = validated.model_dump() if hasattr(validated, "model_dump") else validated.dict()
+    payload["date"] = local_date_start_as_utc_naive(validated.date, user_tz)
+
     # --- insert into DB ---
     try:
         with create_session() as db_session:
-            new_row = AddSession(db_session)(validated.dict())
+            new_row = AddSession(db_session)(payload)
     except Exception as e:
         return jsonify({"error": str(e)}), 400
 
